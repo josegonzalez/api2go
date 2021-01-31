@@ -250,19 +250,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 		baseURL = "/" + prefix + baseURL
 	}
 
-	api.router.Handle("OPTIONS", baseURL, func(w http.ResponseWriter, r *http.Request, _ map[string]string, context map[string]interface{}) {
-		c := api.contextPool.Get().(APIContexter)
-		c.Reset()
-
-		for key, val := range context {
-			c.Set(key, val)
-		}
-
-		api.middlewareChain(c, w, r)
-		w.Header().Set("Allow", strings.Join(getAllowedMethods(source, true), ","))
-		w.WriteHeader(http.StatusNoContent)
-		api.contextPool.Put(c)
-	})
+	api.router.Handle("OPTIONS", baseURL, getOptionsFunc(api)(source, true))
 
 	api.router.Handle("GET", baseURL, func(w http.ResponseWriter, r *http.Request, _ map[string]string, context map[string]interface{}) {
 		info := requestInfo(r, api)
@@ -283,19 +271,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 	})
 
 	if _, ok := source.(ResourceGetter); ok {
-		api.router.Handle("OPTIONS", baseURL+"/:id", func(w http.ResponseWriter, r *http.Request, _ map[string]string, context map[string]interface{}) {
-			c := api.contextPool.Get().(APIContexter)
-			c.Reset()
-
-			for key, val := range context {
-				c.Set(key, val)
-			}
-
-			api.middlewareChain(c, w, r)
-			w.Header().Set("Allow", strings.Join(getAllowedMethods(source, false), ","))
-			w.WriteHeader(http.StatusNoContent)
-			api.contextPool.Put(c)
-		})
+		api.router.Handle("OPTIONS", baseURL+"/:id", getOptionsFunc(api)(source, false))
 
 		api.router.Handle("GET", baseURL+"/:id", func(w http.ResponseWriter, r *http.Request, params map[string]string, context map[string]interface{}) {
 			info := requestInfo(r, api)
@@ -339,6 +315,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 				}
 			}(relation))
 
+			api.router.Handle("OPTIONS", baseURL+"/:id/"+relation.Name, getOptionsFunc(api)(source, false))
 			api.router.Handle("GET", baseURL+"/:id/"+relation.Name, func(relation jsonapi.Reference) routing.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request, params map[string]string, context map[string]interface{}) {
 					info := requestInfo(r, api)
@@ -476,6 +453,24 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 	api.resources = append(api.resources, res)
 
 	return &res
+}
+
+func getOptionsFunc(api *API) func(source interface{}, isCollection bool) routing.HandlerFunc {
+	return func(source interface{}, isCollection bool) routing.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request, params map[string]string, context map[string]interface{}) {
+			c := api.contextPool.Get().(APIContexter)
+			c.Reset()
+
+			for key, val := range context {
+				c.Set(key, val)
+			}
+
+			api.middlewareChain(c, w, r)
+			w.Header().Set("Allow", strings.Join(getAllowedMethods(source, isCollection), ","))
+			w.WriteHeader(http.StatusNoContent)
+			api.contextPool.Put(c)
+		}
+	}
 }
 
 func getAllowedMethods(source interface{}, collection bool) []string {
