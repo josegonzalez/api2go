@@ -1,4 +1,4 @@
-module github.com/manyminds/api2go
+module github.com/josegonzalez/api2go
 
 go 1.14
 
