@@ -940,7 +940,9 @@ func (res *resource) handleAddToManyRelation(c APIContexter, w http.ResponseWrit
 		_, err = source.Update(targetObj, buildRequest(c, r))
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if err != nil {
+		w.WriteHeader(http.StatusNoContent)
+	}
 
 	return err
 }
