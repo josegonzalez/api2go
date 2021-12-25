@@ -13,6 +13,13 @@ type ResourceGetter interface {
 	FindOne(ID string, req Request) (Responder, error)
 }
 
+// The RelatedGetter interface is used for fetching a to-one by it's relation ID
+type RelatedGetter interface {
+	// FindRelatedOne returns a related object by its relation ID
+	// Possible Responder success status code 200
+	FindRelatedOne(relationID string, req Request) (Responder, error)
+}
+
 // The CRUD interface embed all interfaces at once: `ResourceCreator`, `ResourceDeleter`, `ResourceUpdater` (which includes `ResourceGetter`)
 type CRUD interface {
 	ResourceCreator

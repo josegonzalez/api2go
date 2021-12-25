@@ -609,6 +609,14 @@ So if you implement the `FindAll` method, do not forget to check for all possibl
 to check all your other structs and if it references the one for that you are implementing `FindAll`, check for the
 query Paramter and only return comments that belong to it. In this example, return the comments for the Post.
 
+If the relation is a singular relation, implementing the `jsonapi.RelatedGetter` interface is necessary for the `related` link to work correctly.
+
+```go
+type RelatedGetter interface {
+  FindRelatedOne(relationID string, req Request) (Responder, error)
+}
+```
+
 ### Using middleware
 We provide a custom `APIContext` with
 a [context](https://godoc.org/context) implementation that you

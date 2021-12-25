@@ -617,6 +617,19 @@ func (res *resource) handleLinked(c APIContexter, api *API, w http.ResponseWrite
 			request.QueryParams[res.name+"ID"] = []string{id}
 			request.QueryParams[res.name+"Name"] = []string{linked.Name}
 
+			if linked.Relationship == jsonapi.ToOneRelationship {
+				source, ok := resource.source.(RelatedGetter)
+				if !ok {
+					return NewHTTPError(nil, "Resource does not implement the RelatedGetter interface", http.StatusNotFound)
+				}
+
+				obj, err := source.FindRelatedOne(id, request)
+				if err != nil {
+					return err
+				}
+				return res.respondWith(obj, info, http.StatusOK, w, r)
+
+			}
 			if source, ok := resource.source.(PaginatedFindAll); ok {
 				// check for pagination, otherwise normal FindAll
 				pagination := newPaginationQueryParams(r)
