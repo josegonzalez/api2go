@@ -584,8 +584,10 @@ func (res *resource) handleReadRelation(c APIContexter, w http.ResponseWriter, r
 	}
 
 	id := params["id"]
+	req := buildRequest(c, r)
+	req.QueryParams["include"] = []string{relation.Name}
 
-	obj, err := source.FindOne(id, buildRequest(c, r))
+	obj, err := source.FindOne(id, req)
 	if err != nil {
 		return err
 	}
