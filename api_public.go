@@ -1,6 +1,7 @@
 package api2go
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"sync"
@@ -10,7 +11,7 @@ import (
 )
 
 // HandlerFunc for api2go middlewares
-type HandlerFunc func(APIContexter, http.ResponseWriter, *http.Request)
+type HandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
 
 // API is a REST JSONAPI.
 type API struct {
@@ -28,7 +29,7 @@ func (api API) Handler() http.Handler {
 	return api.router.Handler()
 }
 
-//Router returns the specified router on an api instance
+// Router returns the specified router on an api instance
 func (api API) Router() routing.Routeable {
 	return api.router
 }

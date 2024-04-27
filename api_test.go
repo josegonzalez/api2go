@@ -1,6 +1,7 @@
 package api2go
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1460,7 +1461,7 @@ var _ = Describe("RestHandler", func() {
 
 			api = NewAPIWithRouting(testPrefix, NewStaticResolver(""), newTestRouter())
 			api.AddResource(Post{}, source)
-			MiddleTest := func(c APIContexter, w http.ResponseWriter, r *http.Request) {
+			MiddleTest := func(c context.Context, w http.ResponseWriter, r *http.Request) {
 				w.Header().Add("x-test", "test123")
 			}
 			api.UseMiddleware(MiddleTest)
@@ -1484,7 +1485,7 @@ var _ = Describe("RestHandler", func() {
 			source              *fixtureSource
 		)
 		type CustomContext struct {
-			APIContext
+			context.Context
 		}
 
 		BeforeEach(func() {
@@ -1494,7 +1495,7 @@ var _ = Describe("RestHandler", func() {
 
 			api = NewAPIWithRouting(testPrefix, NewStaticResolver(""), newTestRouter())
 			api.AddResource(Post{}, source)
-			api.SetContextAllocator(func(api *API) APIContexter {
+			api.SetContextAllocator(func(api *API) context.Context {
 				customContextCalled = true
 				return &CustomContext{}
 			})

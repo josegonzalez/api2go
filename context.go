@@ -6,7 +6,7 @@ import (
 )
 
 // APIContextAllocatorFunc to allow custom context implementations
-type APIContextAllocatorFunc func(*API) APIContexter
+type APIContextAllocatorFunc func(*API) context.Context
 
 // APIContexter embedding context.Context and requesting two helper functions
 type APIContexter interface {

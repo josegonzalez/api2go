@@ -4,6 +4,7 @@
 package routing_test
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -46,8 +47,8 @@ var _ = Describe("api2go with gingonic router adapter", func() {
 		)
 
 		// Define the ApiContext to allow for access.
-		apiContext = api2go.APIContext{}
-		api.SetContextAllocator(func(*api2go.API) api2go.APIContexter {
+		apiContext = context.Background()
+		api.SetContextAllocator(func(*api2go.API) context.Context {
 			return &apiContext
 		})
 

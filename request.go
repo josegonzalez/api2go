@@ -1,6 +1,9 @@
 package api2go
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 // Request contains additional information for FindOne and Find Requests
 type Request struct {
@@ -8,5 +11,5 @@ type Request struct {
 	QueryParams  map[string][]string
 	Pagination   map[string]string
 	Header       http.Header
-	Context      APIContexter
+	Context      context.Context
 }
