@@ -24,12 +24,17 @@ func (g ginRouter) Handle(protocol, route string, handler HandlerFunc) {
 		defer span.End()
 
 		c.Request = c.Request.WithContext(ctx)
-		params := map[any]any{}
+		params := map[string]string{}
 		for _, p := range c.Params {
 			params[p.Key] = p.Value
 		}
 
-		handler(ctx, c.Writer, c.Request, params, c.Keys)
+		handlerKeys := map[string]interface{}{}
+		for key, value := range c.Keys {
+			handlerKeys[key.(string)] = value
+		}
+
+		handler(ctx, c.Writer, c.Request, params, handlerKeys)
 	}
 
 	g.router.Handle(protocol, route, wrappedCallback)
