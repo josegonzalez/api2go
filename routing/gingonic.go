@@ -24,7 +24,7 @@ func (g ginRouter) Handle(protocol, route string, handler HandlerFunc) {
 		defer span.End()
 
 		c.Request = c.Request.WithContext(ctx)
-		params := map[string]string{}
+		params := map[any]any{}
 		for _, p := range c.Params {
 			params[p.Key] = p.Value
 		}
