@@ -10,23 +10,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: [ '1.17', '1.15', '1.14', '1.13' ]
-    name: Go ${{ matrix.go }} tests
+    name: Go tests
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: Setup Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v6
       with:
-        go-version: ${{ matrix.go }}
+        go-version-file: 'go.mod'
     - name: Install dependencies
       run: |
-        go get -t -d -v ./...
-        go get github.com/onsi/ginkgo/ginkgo
-        go get -u golang.org/x/lint/golint
-        go get -u github.com/modocache/gover
-        go get -u github.com/mattn/goveralls
+        go install github.com/onsi/ginkgo/ginkgo@latest
+        go install github.com/modocache/gover@latest
+        go install github.com/mattn/goveralls@latest
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
     - name: Run tests
       run: |
         ginkgo -r -cover --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress
@@ -37,4 +33,3 @@ jobs:
         bash scripts/fmtpolice
         gover
         goveralls -coverprofile=gover.coverprofile -repotoken gY90SprlNRGmSMl7MgybLreYa05wUXJTU
-  
