@@ -191,7 +191,7 @@ var _ = Describe("Test return code behavior", func() {
 			post(SomeData{ID: "invalid"})
 			Expect(rec.Code).To(Equal(http.StatusInternalServerError))
 			var err HTTPError
-			json.Unmarshal(rec.Body.Bytes(), &err)
+			_ = json.Unmarshal(rec.Body.Bytes(), &err)
 			Expect(err.Errors[0]).To(Equal(Error{
 				Title:  "invalid status code 418 from resource someDatas for method Create",
 				Status: strconv.Itoa(http.StatusInternalServerError)}))
@@ -201,7 +201,7 @@ var _ = Describe("Test return code behavior", func() {
 			post(SomeData{ID: "forbidden", Data: "i am so forbidden"})
 			Expect(rec.Code).To(Equal(http.StatusForbidden))
 			var err HTTPError
-			json.Unmarshal(rec.Body.Bytes(), &err)
+			_ = json.Unmarshal(rec.Body.Bytes(), &err)
 			Expect(err.Errors[0]).To(Equal(Error{Title: "Forbidden", Status: strconv.Itoa(http.StatusForbidden)}))
 		})
 
@@ -209,7 +209,7 @@ var _ = Describe("Test return code behavior", func() {
 			post(SomeData{ID: "conflict", Data: "no force push here"})
 			Expect(rec.Code).To(Equal(http.StatusConflict))
 			var err HTTPError
-			json.Unmarshal(rec.Body.Bytes(), &err)
+			_ = json.Unmarshal(rec.Body.Bytes(), &err)
 			Expect(err.Errors[0]).To(Equal(Error{Title: "Conflict", Status: strconv.Itoa(http.StatusConflict)}))
 		})
 	})
@@ -248,7 +248,7 @@ var _ = Describe("Test return code behavior", func() {
 			patch(SomeData{ID: "12345", Data: "invalid"})
 			Expect(rec.Code).To(Equal(http.StatusInternalServerError))
 			var err HTTPError
-			json.Unmarshal(rec.Body.Bytes(), &err)
+			_ = json.Unmarshal(rec.Body.Bytes(), &err)
 			Expect(err.Errors[0]).To(Equal(Error{
 				Title:  "invalid status code 418 from resource someDatas for method Update",
 				Status: strconv.Itoa(http.StatusInternalServerError)}))
@@ -260,7 +260,7 @@ var _ = Describe("Test return code behavior", func() {
 			patch(SomeData{ID: "12345", Data: "fail"})
 			Expect(rec.Code).To(Equal(http.StatusForbidden), "we do not allow failes here!")
 			var err HTTPError
-			json.Unmarshal(rec.Body.Bytes(), &err)
+			_ = json.Unmarshal(rec.Body.Bytes(), &err)
 			Expect(err.Errors[0]).To(Equal(Error{Title: "Fail", Status: strconv.Itoa(http.StatusForbidden)}))
 		})
 
@@ -277,7 +277,7 @@ var _ = Describe("Test return code behavior", func() {
 			delete("200")
 			Expect(rec.Code).To(Equal(http.StatusOK))
 			var response map[string]interface{}
-			json.Unmarshal(rec.Body.Bytes(), &response)
+			_ = json.Unmarshal(rec.Body.Bytes(), &response)
 			Expect(response).To(Equal(map[string]interface{}{
 				"meta": map[string]interface{}{
 					"some": "cool stuff",

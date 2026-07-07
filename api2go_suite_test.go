@@ -3,7 +3,7 @@ package api2go
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
+	"io"
 	"log"
 
 	"testing"
@@ -11,6 +11,6 @@ import (
 
 func TestApi2go(t *testing.T) {
 	RegisterFailHandler(Fail)
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 	RunSpecs(t, "Api2go Suite")
 }

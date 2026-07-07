@@ -89,7 +89,7 @@ func Unmarshal(data []byte, target interface{}) error {
 		return errors.New("target must not be nil")
 	}
 
-	if reflect.TypeOf(target).Kind() != reflect.Ptr {
+	if reflect.TypeOf(target).Kind() != reflect.Pointer {
 		return errors.New("target must be a ptr")
 	}
 
@@ -101,7 +101,7 @@ func Unmarshal(data []byte, target interface{}) error {
 	}
 
 	if ctx.Data == nil {
-		return errors.New(`Source JSON is empty and has no "attributes" payload object`)
+		return errors.New(`source JSON is empty and has no "attributes" payload object`)
 	}
 
 	if ctx.Data.DataObject != nil {
@@ -111,7 +111,7 @@ func Unmarshal(data []byte, target interface{}) error {
 	if ctx.Data.DataArray != nil {
 		targetSlice := reflect.TypeOf(target).Elem()
 		if targetSlice.Kind() != reflect.Slice {
-			return fmt.Errorf("Cannot unmarshal array to struct target %s", targetSlice)
+			return fmt.Errorf("cannot unmarshal array to struct target %s", targetSlice)
 		}
 		targetType := targetSlice.Elem()
 		targetPointer := reflect.ValueOf(target)
@@ -244,7 +244,7 @@ func setRelationshipIDs(relationships map[string]Relationship, target UnmarshalI
 func checkType(incomingType string, target UnmarshalIdentifier) error {
 	actualType := getStructType(target)
 	if incomingType != actualType {
-		return fmt.Errorf("Type %s in JSON does not match target struct type %s", incomingType, actualType)
+		return fmt.Errorf("type %s in JSON does not match target struct type %s", incomingType, actualType)
 	}
 
 	return nil

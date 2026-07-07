@@ -116,9 +116,9 @@ type NestConfig struct {
 	ChildParam string
 }
 
-//URLResolver allows you to implement a static
-//way to return a baseURL for all incoming
-//requests for one api2go instance.
+// URLResolver allows you to implement a static
+// way to return a baseURL for all incoming
+// requests for one api2go instance.
 type URLResolver interface {
 	GetBaseURL() string
 }

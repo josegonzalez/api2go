@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"log"
 	"net/http"
 	"net/url"
@@ -203,7 +204,7 @@ func (api *API) allocateDefaultContext() context.Context {
 
 func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interface{}) *resource {
 	resourceType := reflect.TypeOf(prototype)
-	if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Ptr {
+	if resourceType.Kind() != reflect.Struct && resourceType.Kind() != reflect.Pointer {
 		panic("pass an empty resource struct or a struct pointer to AddResource!")
 	}
 
@@ -261,7 +262,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 		info := requestInfo(r, api)
 		for key, val := range contextParams {
 			WithAttribute(span, key, val)
-			c = context.WithValue(c, key, val)
+			c = contextWithValue(c, key, val)
 		}
 
 		api.middlewareChain(c, w, r)
@@ -284,7 +285,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 			for key, val := range contextParams {
 				WithAttribute(span, key, val)
-				c = context.WithValue(c, key, val)
+				c = contextWithValue(c, key, val)
 			}
 
 			api.middlewareChain(c, w, r)
@@ -312,7 +313,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 					for key, val := range contextParams {
 						WithAttribute(span, key, val)
-						c = context.WithValue(c, key, val)
+						c = contextWithValue(c, key, val)
 					}
 
 					api.middlewareChain(c, w, r)
@@ -335,7 +336,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 					for key, val := range contextParams {
 						WithAttribute(span, key, val)
-						c = context.WithValue(c, key, val)
+						c = contextWithValue(c, key, val)
 					}
 
 					api.middlewareChain(c, w, r)
@@ -355,7 +356,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 					for key, val := range contextParams {
 						WithAttribute(span, key, val)
-						c = context.WithValue(c, key, val)
+						c = contextWithValue(c, key, val)
 					}
 
 					api.middlewareChain(c, w, r)
@@ -377,7 +378,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 						for key, val := range contextParams {
 							WithAttribute(span, key, val)
-							c = context.WithValue(c, key, val)
+							c = contextWithValue(c, key, val)
 						}
 
 						api.middlewareChain(c, w, r)
@@ -397,7 +398,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 						for key, val := range contextParams {
 							WithAttribute(span, key, val)
-							c = context.WithValue(c, key, val)
+							c = contextWithValue(c, key, val)
 						}
 
 						api.middlewareChain(c, w, r)
@@ -421,7 +422,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 			info := requestInfo(r, api)
 			for key, val := range contextParams {
 				WithAttribute(span, key, val)
-				c = context.WithValue(c, key, val)
+				c = contextWithValue(c, key, val)
 			}
 
 			api.middlewareChain(c, w, r)
@@ -441,7 +442,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 			for key, val := range contextParams {
 				WithAttribute(span, key, val)
-				c = context.WithValue(c, key, val)
+				c = contextWithValue(c, key, val)
 			}
 
 			api.middlewareChain(c, w, r)
@@ -462,7 +463,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 			info := requestInfo(r, api)
 			for key, val := range contextParams {
 				WithAttribute(span, key, val)
-				c = context.WithValue(c, key, val)
+				c = contextWithValue(c, key, val)
 			}
 
 			api.middlewareChain(c, w, r)
@@ -505,7 +506,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 				info := requestInfo(r, api)
 				for key, val := range contextParams {
 					WithAttribute(span, key, val)
-					c = context.WithValue(c, key, val)
+					c = contextWithValue(c, key, val)
 				}
 
 				setQueryParam(r, parentIDKey, params["id"])
@@ -526,7 +527,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 
 				for key, val := range contextParams {
 					WithAttribute(span, key, val)
-					c = context.WithValue(c, key, val)
+					c = contextWithValue(c, key, val)
 				}
 
 				setQueryParam(r, parentIDKey, params["id"])
@@ -548,7 +549,7 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 				info := requestInfo(r, api)
 				for key, val := range contextParams {
 					WithAttribute(span, key, val)
-					c = context.WithValue(c, key, val)
+					c = contextWithValue(c, key, val)
 				}
 
 				setQueryParam(r, parentIDKey, params["id"])
@@ -595,7 +596,7 @@ func getOptionsFunc(api *API) func(baseURL string, source interface{}, isCollect
 
 			for key, val := range contextParams {
 				WithAttribute(span, key, val)
-				c = context.WithValue(c, key, val)
+				c = contextWithValue(c, key, val)
 			}
 
 			api.middlewareChain(c, w, r)
@@ -626,6 +627,13 @@ func getAllowedMethods(source interface{}, collection bool) []string {
 	}
 
 	return result
+}
+
+// contextWithValue stores a router-provided value on the context. The keys are
+// framework-supplied strings copied from the underlying router, so SA1029's
+// custom-key-type recommendation does not apply here.
+func contextWithValue(c context.Context, key string, val interface{}) context.Context {
+	return context.WithValue(c, key, val) //nolint:staticcheck // dynamic router keys are strings by construction
 }
 
 func buildRequest(c context.Context, r *http.Request) Request {
@@ -695,7 +703,7 @@ func (res *resource) handleRead(c context.Context, w http.ResponseWriter, r *htt
 	source, ok := res.source.(ResourceGetter)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceGetter interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceGetter interface", res.name)
 	}
 
 	id := params["id"]
@@ -713,7 +721,7 @@ func (res *resource) handleReadRelation(c context.Context, w http.ResponseWriter
 	source, ok := res.source.(ResourceGetter)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceGetter interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceGetter interface", res.name)
 	}
 
 	id := params["id"]
@@ -798,7 +806,7 @@ func (res *resource) handleLinked(c context.Context, api *API, w http.ResponseWr
 	}
 
 	return NewHTTPError(
-		errors.New("Not Found"),
+		errors.New("not found"),
 		"No resource handler is registered to handle the linked resource "+linked.Name,
 		http.StatusNotFound,
 	)
@@ -808,7 +816,7 @@ func (res *resource) handleCreate(c context.Context, w http.ResponseWriter, r *h
 	source, ok := res.source.(ResourceCreator)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceCreator interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceCreator interface", res.name)
 	}
 
 	ctx, err := unmarshalRequest(r)
@@ -819,7 +827,7 @@ func (res *resource) handleCreate(c context.Context, w http.ResponseWriter, r *h
 	// Ok this is weird again, but reflect.New produces a pointer, so we need the pure type without pointer,
 	// otherwise we would have a pointer pointer type that we don't want.
 	resourceType := res.resourceType
-	if resourceType.Kind() == reflect.Ptr {
+	if resourceType.Kind() == reflect.Pointer {
 		resourceType = resourceType.Elem()
 	}
 	newObj := reflect.New(resourceType).Interface()
@@ -850,7 +858,7 @@ func (res *resource) handleCreate(c context.Context, w http.ResponseWriter, r *h
 	result, ok := response.Result().(jsonapi.MarshalIdentifier)
 
 	if !ok {
-		return fmt.Errorf("Expected one newly created object by resource %s", res.name)
+		return fmt.Errorf("expected one newly created object by resource %s", res.name)
 	}
 
 	if len(prefix) > 0 {
@@ -878,7 +886,7 @@ func (res *resource) handleUpdate(c context.Context, w http.ResponseWriter, r *h
 	source, ok := res.source.(ResourceUpdater)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceUpdater interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
 	id := params["id"]
@@ -928,7 +936,7 @@ func (res *resource) handleUpdate(c context.Context, w http.ResponseWriter, r *h
 			}
 			updated = internalResponse.Result()
 			if updated == nil {
-				return fmt.Errorf("Expected FindOne to return one object of resource %s", res.name)
+				return fmt.Errorf("expected FindOne to return one object of resource %s", res.name)
 			}
 
 			response = internalResponse
@@ -950,7 +958,7 @@ func (res *resource) handleReplaceRelation(c context.Context, w http.ResponseWri
 	source, ok := res.source.(ResourceUpdater)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceUpdater interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
 	var (
@@ -977,7 +985,7 @@ func (res *resource) handleReplaceRelation(c context.Context, w http.ResponseWri
 	}
 	data, ok := inc["data"]
 	if !ok {
-		return errors.New("Invalid object. Need a \"data\" object")
+		return errors.New("invalid object. Need a \"data\" object")
 	}
 
 	resType := reflect.TypeOf(response.Result()).Kind()
@@ -1006,7 +1014,7 @@ func (res *resource) handleAddToManyRelation(c context.Context, w http.ResponseW
 	source, ok := res.source.(ResourceUpdater)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceUpdater interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
 	var (
@@ -1033,12 +1041,12 @@ func (res *resource) handleAddToManyRelation(c context.Context, w http.ResponseW
 
 	data, ok := inc["data"]
 	if !ok {
-		return errors.New("Invalid object. Need a \"data\" object")
+		return errors.New("invalid object. Need a \"data\" object")
 	}
 
 	newRels, ok := data.([]interface{})
 	if !ok {
-		return fmt.Errorf("Data must be an array with \"id\" and \"type\" field to add new to-many relationships")
+		return fmt.Errorf("data must be an array with \"id\" and \"type\" field to add new to-many relationships")
 	}
 
 	newIDs := []string{}
@@ -1067,7 +1075,7 @@ func (res *resource) handleAddToManyRelation(c context.Context, w http.ResponseW
 	if !ok {
 		return errors.New("target struct must implement jsonapi.EditToManyRelations")
 	}
-	targetObj.AddToManyIDs(relation.Name, newIDs)
+	_ = targetObj.AddToManyIDs(relation.Name, newIDs)
 
 	if resType == reflect.Struct {
 		_, err = source.Update(reflect.ValueOf(targetObj).Elem().Interface(), buildRequest(c, r))
@@ -1086,7 +1094,7 @@ func (res *resource) handleDeleteToManyRelation(c context.Context, w http.Respon
 	source, ok := res.source.(ResourceUpdater)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceUpdater interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
 	var (
@@ -1114,12 +1122,12 @@ func (res *resource) handleDeleteToManyRelation(c context.Context, w http.Respon
 
 	data, ok := inc["data"]
 	if !ok {
-		return errors.New("Invalid object. Need a \"data\" object")
+		return errors.New("invalid object. Need a \"data\" object")
 	}
 
 	newRels, ok := data.([]interface{})
 	if !ok {
-		return fmt.Errorf("Data must be an array with \"id\" and \"type\" field to add new to-many relationships")
+		return fmt.Errorf("data must be an array with \"id\" and \"type\" field to add new to-many relationships")
 	}
 
 	obsoleteIDs := []string{}
@@ -1148,7 +1156,7 @@ func (res *resource) handleDeleteToManyRelation(c context.Context, w http.Respon
 	if !ok {
 		return errors.New("target struct must implement jsonapi.EditToManyRelations")
 	}
-	targetObj.DeleteToManyIDs(relation.Name, obsoleteIDs)
+	_ = targetObj.DeleteToManyIDs(relation.Name, obsoleteIDs)
 
 	if resType == reflect.Struct {
 		_, err = source.Update(reflect.ValueOf(targetObj).Elem().Interface(), buildRequest(c, r))
@@ -1173,7 +1181,7 @@ func (res *resource) handleDelete(c context.Context, w http.ResponseWriter, r *h
 	source, ok := res.source.(ResourceDeleter)
 
 	if !ok {
-		return fmt.Errorf("Resource %s does not implement the ResourceDeleter interface", res.name)
+		return fmt.Errorf("resource %s does not implement the ResourceDeleter interface", res.name)
 	}
 
 	id := params["id"]
@@ -1203,7 +1211,7 @@ func (res *resource) handleDelete(c context.Context, w http.ResponseWriter, r *h
 func writeResult(w http.ResponseWriter, data []byte, status int, contentType string) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(status)
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 func (res *resource) respondWith(obj Responder, info information, status int, w http.ResponseWriter, r *http.Request) error {
@@ -1245,8 +1253,8 @@ func (res *resource) respondWithPagination(obj Responder, info information, stat
 }
 
 func unmarshalRequest(r *http.Request) ([]byte, error) {
-	defer r.Body.Close()
-	data, err := ioutil.ReadAll(r.Body)
+	defer func() { _ = r.Body.Close() }()
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}

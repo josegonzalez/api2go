@@ -150,7 +150,7 @@ func (c *RelationshipDataContainer) UnmarshalJSON(payload []byte) error {
 		return json.Unmarshal(payload, &c.DataArray)
 	}
 
-	return errors.New("Invalid json for relationship data array/object")
+	return errors.New("invalid json for relationship data array/object")
 }
 
 // MarshalJSON returns the JSON encoding of the DataArray field or the DataObject

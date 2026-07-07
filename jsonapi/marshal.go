@@ -136,7 +136,7 @@ func MarshalToStruct(data interface{}, information ServerInformation) (*Document
 	switch reflect.TypeOf(data).Kind() {
 	case reflect.Slice:
 		return marshalSlice(data, information)
-	case reflect.Struct, reflect.Ptr:
+	case reflect.Struct, reflect.Pointer:
 		return marshalStruct(data.(MarshalIdentifier), information)
 	default:
 		return nil, errors.New("Marshal only accepts slice, struct or ptr types")
@@ -234,7 +234,7 @@ func filterDuplicates(input []MarshalIdentifier, information ServerInformation) 
 
 func marshalData(element MarshalIdentifier, data *Data, information ServerInformation) error {
 	refValue := reflect.ValueOf(element)
-	if refValue.Kind() == reflect.Ptr && refValue.IsNil() {
+	if refValue.Kind() == reflect.Pointer && refValue.IsNil() {
 		return errors.New("MarshalIdentifier must not be nil")
 	}
 
@@ -452,7 +452,7 @@ func getStructType(data interface{}) string {
 	}
 
 	reflectType := reflect.TypeOf(data)
-	if reflectType.Kind() == reflect.Ptr {
+	if reflectType.Kind() == reflect.Pointer {
 		return Pluralize(Jsonify(reflectType.Elem().Name()))
 	}
 
