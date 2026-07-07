@@ -474,9 +474,116 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 		})
 	}
 
+	if nested, ok := source.(NestedResource); ok {
+		cfg := nested.NestConfig()
+		relation := cfg.Relation
+		if relation == "" {
+			relation = name
+		}
+
+		nestedCollection := "/" + cfg.Parent + "/:id/" + relation
+		if prefix != "" {
+			nestedCollection = "/" + prefix + nestedCollection
+		}
+
+		// Composite resources address an item by a child segment; app-keyed
+		// singletons reuse the parent id as the resource id, so their item
+		// routes hang directly off the collection path.
+		nestedItem := nestedCollection
+		if cfg.ChildParam != "" {
+			nestedItem = nestedCollection + "/:childId"
+		}
+
+		parentIDKey := cfg.Parent + "ID"
+
+		if _, ok := source.(ResourceCreator); ok {
+			api.router.Handle("POST", nestedCollection, func(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, contextParams map[string]interface{}) {
+				c, span := NewSpan(c, "POST "+nestedCollection)
+				defer span.End()
+				r = r.WithContext(c)
+
+				info := requestInfo(r, api)
+				for key, val := range contextParams {
+					WithAttribute(span, key, val)
+					c = context.WithValue(c, key, val)
+				}
+
+				setQueryParam(r, parentIDKey, params["id"])
+				api.middlewareChain(c, w, r)
+				err := res.handleCreate(c, w, r, info.prefix, *info)
+				api.contextPool.Put(c)
+				if err != nil {
+					handleError(err, w, r, api.ContentType)
+				}
+			})
+		}
+
+		if _, ok := source.(ResourceDeleter); ok {
+			api.router.Handle("DELETE", nestedItem, func(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, contextParams map[string]interface{}) {
+				c, span := NewSpan(c, "DELETE "+nestedItem)
+				defer span.End()
+				r = r.WithContext(c)
+
+				for key, val := range contextParams {
+					WithAttribute(span, key, val)
+					c = context.WithValue(c, key, val)
+				}
+
+				setQueryParam(r, parentIDKey, params["id"])
+				api.middlewareChain(c, w, r)
+				err := res.handleDelete(c, w, r, nestedItemParams(params, cfg.ChildParam))
+				api.contextPool.Put(c)
+				if err != nil {
+					handleError(err, w, r, api.ContentType)
+				}
+			})
+		}
+
+		if _, ok := source.(ResourceUpdater); ok {
+			api.router.Handle("PATCH", nestedItem, func(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, contextParams map[string]interface{}) {
+				c, span := NewSpan(c, "PATCH "+nestedItem)
+				defer span.End()
+				r = r.WithContext(c)
+
+				info := requestInfo(r, api)
+				for key, val := range contextParams {
+					WithAttribute(span, key, val)
+					c = context.WithValue(c, key, val)
+				}
+
+				setQueryParam(r, parentIDKey, params["id"])
+				api.middlewareChain(c, w, r)
+				err := res.handleUpdate(c, w, r, nestedItemParams(params, cfg.ChildParam), *info)
+				api.contextPool.Put(c)
+				if err != nil {
+					handleError(err, w, r, api.ContentType)
+				}
+			})
+		}
+	}
+
 	api.resources = append(api.resources, res)
 
 	return &res
+}
+
+// setQueryParam sets a single query parameter on the request URL so the
+// downstream flat handlers observe it through buildRequest's QueryParams. It is
+// used by nested routes to pass the parent id along as Parent+"ID".
+func setQueryParam(r *http.Request, key, value string) {
+	q := r.URL.Query()
+	q.Set(key, value)
+	r.URL.RawQuery = q.Encode()
+}
+
+// nestedItemParams maps a nested route's path parameters onto the "id" the flat
+// item handlers expect. Composite resources carry the resource id in the child
+// segment; app-keyed singletons use the parent id as the resource id.
+func nestedItemParams(params map[string]string, childParam string) map[string]string {
+	if childParam == "" {
+		return map[string]string{"id": params["id"]}
+	}
+	return map[string]string{"id": params["childId"]}
 }
 
 func getOptionsFunc(api *API) func(baseURL string, source interface{}, isCollection bool) routing.HandlerFunc {
