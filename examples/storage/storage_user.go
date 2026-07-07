@@ -48,7 +48,7 @@ func (s *UserStorage) Insert(c model.User) string {
 func (s *UserStorage) Delete(id string) error {
 	_, exists := s.users[id]
 	if !exists {
-		return fmt.Errorf("User with id %s does not exist", id)
+		return fmt.Errorf("user with id %s does not exist", id)
 	}
 	delete(s.users, id)
 
@@ -59,7 +59,7 @@ func (s *UserStorage) Delete(id string) error {
 func (s *UserStorage) Update(c model.User) error {
 	_, exists := s.users[c.ID]
 	if !exists {
-		return fmt.Errorf("User with id %s does not exist", c.ID)
+		return fmt.Errorf("user with id %s does not exist", c.ID)
 	}
 	s.users[c.ID] = &c
 

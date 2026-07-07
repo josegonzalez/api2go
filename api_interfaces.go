@@ -91,9 +91,34 @@ type ObjectInitializer interface {
 	InitializeObject(interface{})
 }
 
-//URLResolver allows you to implement a static
-//way to return a baseURL for all incoming
-//requests for one api2go instance.
+// The NestedResource interface MAY be implemented to additionally expose a
+// resource's create/update/delete routes nested under a parent collection -
+// for example POST /apps/:id/envs alongside the flat POST /envs. The nested
+// routes reuse the resource's existing Create/Update/Delete handlers; the
+// parent id is supplied to them as the QueryParams[Parent+"ID"] value, the
+// same convention used for nested relationship reads.
+type NestedResource interface {
+	NestConfig() NestConfig
+}
+
+// NestConfig describes how a resource nests under a parent collection.
+type NestConfig struct {
+	// Parent is the parent collection name, e.g. "apps". The nested routes
+	// are mounted under /Parent/:id/.
+	Parent string
+	// Relation is the path segment under the parent, e.g. "envs" or
+	// "httpAuth". When empty the resource's own collection name is used.
+	Relation string
+	// ChildParam names the item id segment for composite resources, e.g.
+	// "envId", producing /Parent/:id/Relation/:envId. When empty the resource
+	// is an app-keyed singleton whose update/delete routes hang directly off
+	// /Parent/:id/Relation with no child segment.
+	ChildParam string
+}
+
+// URLResolver allows you to implement a static
+// way to return a baseURL for all incoming
+// requests for one api2go instance.
 type URLResolver interface {
 	GetBaseURL() string
 }

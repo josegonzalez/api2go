@@ -137,7 +137,7 @@ func (s UserResource) FindOne(ID string, r api2go.Request) (api2go.Responder, er
 func (s UserResource) Create(obj interface{}, r api2go.Request) (api2go.Responder, error) {
 	user, ok := obj.(model.User)
 	if !ok {
-		return &Response{}, api2go.NewHTTPError(errors.New("Invalid instance given"), "Invalid instance given", http.StatusBadRequest)
+		return &Response{}, api2go.NewHTTPError(errors.New("invalid instance given"), "Invalid instance given", http.StatusBadRequest)
 	}
 
 	id := s.UserStorage.Insert(user)
@@ -152,11 +152,11 @@ func (s UserResource) Delete(id string, r api2go.Request) (api2go.Responder, err
 	return &Response{Code: http.StatusNoContent}, err
 }
 
-//Update stores all changes on the user
+// Update stores all changes on the user
 func (s UserResource) Update(obj interface{}, r api2go.Request) (api2go.Responder, error) {
 	user, ok := obj.(model.User)
 	if !ok {
-		return &Response{}, api2go.NewHTTPError(errors.New("Invalid instance given"), "Invalid instance given", http.StatusBadRequest)
+		return &Response{}, api2go.NewHTTPError(errors.New("invalid instance given"), "Invalid instance given", http.StatusBadRequest)
 	}
 
 	err := s.UserStorage.Update(user)

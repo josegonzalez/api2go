@@ -116,7 +116,7 @@ var _ = Describe("JSONAPI Struct tests", func() {
 
 		err := json.Unmarshal([]byte(sampleJSON), &target)
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(Equal("Invalid json for relationship data array/object"))
+		Expect(err.Error()).To(Equal("invalid json for relationship data array/object"))
 	})
 
 	It("creates an empty slice for empty to-many relationships and nil for empty toOne", func() {

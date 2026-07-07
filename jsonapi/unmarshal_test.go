@@ -184,7 +184,7 @@ var _ = Describe("Unmarshal", func() {
 		})
 
 		It("errors with invalid time format", func() {
-			t, err := time.Parse(time.RFC3339, "2014-11-10T16:30:48.823Z")
+			t, _ := time.Parse(time.RFC3339, "2014-11-10T16:30:48.823Z")
 			faultyPostMap := []byte(`{
 				"data": {
 					"attributes": {
@@ -196,7 +196,7 @@ var _ = Describe("Unmarshal", func() {
 				}
 			}`)
 			var post SimplePost
-			err = Unmarshal(faultyPostMap, &post)
+			err := Unmarshal(faultyPostMap, &post)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("parsing time"))
 		})
@@ -237,7 +237,7 @@ var _ = Describe("Unmarshal", func() {
 			var post SimplePost
 			err := Unmarshal(json, &post)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Cannot unmarshal array to struct target jsonapi.SimplePost"))
+			Expect(err.Error()).To(Equal("cannot unmarshal array to struct target jsonapi.SimplePost"))
 		})
 
 		Context("slice fields", func() {

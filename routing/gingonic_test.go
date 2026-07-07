@@ -9,9 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
-	"unsafe"
 
 	"github.com/gin-gonic/gin"
 	"github.com/manyminds/api2go"
@@ -26,14 +24,14 @@ import (
 
 var _ = Describe("api2go with gingonic router adapter", func() {
 	var (
-		router       routing.Routeable
-		gg           *gin.Engine
-		api          *api2go.API
-		rec          *httptest.ResponseRecorder
-		contextKey   = "userID"
-		contextValue *string
-		apiContext   api2go.APIContext
-		userStorage  *storage.UserStorage
+		router        routing.Routeable
+		gg            *gin.Engine
+		api           *api2go.API
+		rec           *httptest.ResponseRecorder
+		contextKey    = "userID"
+		contextValue  *string
+		capturedValue interface{}
+		userStorage   *storage.UserStorage
 	)
 
 	BeforeSuite(func() {
@@ -46,10 +44,10 @@ var _ = Describe("api2go with gingonic router adapter", func() {
 			router,
 		)
 
-		// Define the ApiContext to allow for access.
-		apiContext = context.Background()
-		api.SetContextAllocator(func(*api2go.API) context.Context {
-			return &apiContext
+		// Capture the request context so the tests can assert that gin context
+		// keys set by middleware are copied into the api2go request context.
+		api.UseMiddleware(func(c context.Context, w http.ResponseWriter, r *http.Request) {
+			capturedValue = c.Value(contextKey)
 		})
 
 		userStorage = storage.NewUserStorage()
@@ -216,9 +214,10 @@ var _ = Describe("api2go with gingonic router adapter", func() {
 	Context("Gin Context Key Copy Tests", func() {
 		BeforeEach(func() {
 			contextValue = nil
+			capturedValue = nil
 		})
 
-		It("context value is present for chocolate resource", func() {
+		It("copies gin context keys into the api2go request context", func() {
 			tempVal := "1"
 			contextValue = &tempVal
 			expected := `{"data":[],"meta":{"author": "The api2go examples crew", "license": "wtfpl", "license-url": "http://www.wtfpl.net"}}`
@@ -228,13 +227,10 @@ var _ = Describe("api2go with gingonic router adapter", func() {
 			Expect(rec.Code).To(Equal(http.StatusOK))
 			Expect(string(rec.Body.Bytes())).To(MatchJSON(expected))
 
-			rawKeys := reflect.ValueOf(&apiContext).Elem().Field(0)
-			keys := reflect.NewAt(rawKeys.Type(), unsafe.Pointer(rawKeys.UnsafeAddr())).Elem().Interface().(map[string]interface{})
-
-			Expect(keys).To(Equal(map[string]interface{}{contextKey: *contextValue}))
+			Expect(capturedValue).To(Equal(*contextValue))
 		})
 
-		It("context value is not present for chocolate resource", func() {
+		It("leaves the request context untouched when no gin key is set", func() {
 			expected := `{"data":[],"meta":{"author": "The api2go examples crew", "license": "wtfpl", "license-url": "http://www.wtfpl.net"}}`
 			req, err := http.NewRequest("GET", "/api/chocolates", strings.NewReader(""))
 			Expect(err).To(BeNil())
@@ -242,10 +238,7 @@ var _ = Describe("api2go with gingonic router adapter", func() {
 			Expect(rec.Code).To(Equal(http.StatusOK))
 			Expect(string(rec.Body.Bytes())).To(MatchJSON(expected))
 
-			rawKeys := reflect.ValueOf(&apiContext).Elem().Field(0)
-			keys := reflect.NewAt(rawKeys.Type(), unsafe.Pointer(rawKeys.UnsafeAddr())).Elem().Interface().(map[string]interface{})
-
-			Expect(keys).To(BeNil())
+			Expect(capturedValue).To(BeNil())
 		})
 	})
 })

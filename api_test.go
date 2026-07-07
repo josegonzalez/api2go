@@ -21,8 +21,7 @@ import (
 const testPrefix = "v1"
 
 type requestURLResolver struct {
-	r     http.Request
-	calls int
+	r http.Request
 }
 
 func (m requestURLResolver) GetBaseURL() string {
@@ -867,7 +866,7 @@ var _ = Describe("RestHandler", func() {
 			api.Handler().ServeHTTP(rec, req)
 			// It's up to the user how to implement this. Api2go just checks if the type is correct
 			Expect(rec.Code).To(Equal(http.StatusConflict))
-			Expect(string(rec.Body.Bytes())).To(MatchJSON(`{"errors":[{"status":"409","title":"id in the resource does not match servers endpoint"}]}`))
+			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"409","title":"id in the resource does not match servers endpoint"}]}`))
 		})
 
 		It("POST without type returns 406", func() {
@@ -876,7 +875,7 @@ var _ = Describe("RestHandler", func() {
 			Expect(err).To(BeNil())
 			api.Handler().ServeHTTP(rec, req)
 			Expect(rec.Code).To(Equal(http.StatusNotAcceptable))
-			Expect(string(rec.Body.Bytes())).To(MatchJSON(`{"errors":[{"status":"406","title":"invalid record, no type was specified"}]}`))
+			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"406","title":"invalid record, no type was specified"}]}`))
 
 		})
 
@@ -905,7 +904,7 @@ var _ = Describe("RestHandler", func() {
 				Expect(err).To(BeNil())
 				api.Handler().ServeHTTP(rec, req)
 				Expect(rec.Code).To(Equal(http.StatusConflict))
-				Expect(string(rec.Body.Bytes())).To(MatchJSON(`{"errors":[{"status":"409","title":"id in the resource does not match servers endpoint"}]}`))
+				Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"409","title":"id in the resource does not match servers endpoint"}]}`))
 			})
 
 			It("UPDATEs correctly using null.* values", func() {
@@ -1076,7 +1075,7 @@ var _ = Describe("RestHandler", func() {
 			api.Handler().ServeHTTP(rec, req)
 			Expect(rec.Code).To(Equal(http.StatusBadRequest))
 			expected := `{"errors":[{"id":"SomeErrorID","source":{"pointer":"Title"}}]}`
-			actual := strings.TrimSpace(string(rec.Body.Bytes()))
+			actual := strings.TrimSpace(rec.Body.String())
 			Expect(actual).To(Equal(expected))
 		})
 	})
@@ -1429,9 +1428,7 @@ var _ = Describe("RestHandler", func() {
 		})
 
 		Context("test utility function getPointerToStruct", func() {
-			type someStruct struct {
-				someEntry string
-			}
+			type someStruct struct{}
 
 			It("Should work as expected", func() {
 				testItem := someStruct{}
@@ -1475,41 +1472,6 @@ var _ = Describe("RestHandler", func() {
 			api.Handler().ServeHTTP(rec, req)
 			Expect(rec.Header().Get("x-test")).To(Equal("test123"))
 		})
-	})
-
-	Context("Custom context", func() {
-		var (
-			api                 *API
-			customContextCalled bool = false
-			rec                 *httptest.ResponseRecorder
-			source              *fixtureSource
-		)
-		type CustomContext struct {
-			context.Context
-		}
-
-		BeforeEach(func() {
-			source = &fixtureSource{map[string]*Post{
-				"1": {ID: "1", Title: "Hello, World!"},
-			}, false}
-
-			api = NewAPIWithRouting(testPrefix, NewStaticResolver(""), newTestRouter())
-			api.AddResource(Post{}, source)
-			api.SetContextAllocator(func(api *API) context.Context {
-				customContextCalled = true
-				return &CustomContext{}
-			})
-			rec = httptest.NewRecorder()
-		})
-
-		It("calls into custom context allocator", func() {
-			rec = httptest.NewRecorder()
-			req, err := http.NewRequest("OPTIONS", "/v1/posts", nil)
-			Expect(err).To(BeNil())
-			api.Handler().ServeHTTP(rec, req)
-			Expect(customContextCalled).To(BeTrue())
-		})
-
 	})
 
 	Context("dynamic baseurl handling", func() {

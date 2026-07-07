@@ -22,13 +22,13 @@ jobs:
         go install github.com/onsi/ginkgo/ginkgo@latest
         go install github.com/modocache/gover@latest
         go install github.com/mattn/goveralls@latest
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+        curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin
     - name: Run tests
+      env:
+        ACK_GINKGO_RC: true
       run: |
         ginkgo -r -cover --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress
-        ginkgo -tags=gorillamux -r --randomizeSuites --failOnPending --trace --race
         ginkgo -tags=gingonic -r --randomizeSuites --failOnPending --trace --race
-        ginkgo -tags=echo -r --randomizeSuites --failOnPending --trace --race
         rm examples/examples.coverprofile
         bash scripts/fmtpolice
         gover

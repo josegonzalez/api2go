@@ -100,14 +100,13 @@ func (u *User) SetID(stringID string) error {
 }
 
 type SimplePost struct {
-	ID        string    `json:"-"`
-	Title     string    `json:"title"`
-	Text      string    `json:"text"`
-	Internal  string    `json:"-"`
-	Size      int       `json:"size"`
-	Created   time.Time `json:"created-date"`
-	Updated   time.Time `json:"updated-date"`
-	topSecret string
+	ID       string    `json:"-"`
+	Title    string    `json:"title"`
+	Text     string    `json:"text"`
+	Internal string    `json:"-"`
+	Size     int       `json:"size"`
+	Created  time.Time `json:"created-date"`
+	Updated  time.Time `json:"updated-date"`
 }
 
 func (s SimplePost) GetID() string {

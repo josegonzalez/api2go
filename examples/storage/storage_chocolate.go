@@ -52,7 +52,7 @@ func (s ChocolateStorage) GetOne(id string) (model.Chocolate, error) {
 		return *choc, nil
 	}
 
-	return model.Chocolate{}, fmt.Errorf("Chocolate for id %s not found", id)
+	return model.Chocolate{}, fmt.Errorf("chocolate for id %s not found", id)
 }
 
 // Insert a fresh one
@@ -68,7 +68,7 @@ func (s *ChocolateStorage) Insert(c model.Chocolate) string {
 func (s *ChocolateStorage) Delete(id string) error {
 	_, exists := s.chocolates[id]
 	if !exists {
-		return fmt.Errorf("Chocolate with id %s does not exist", id)
+		return fmt.Errorf("chocolate with id %s does not exist", id)
 	}
 	delete(s.chocolates, id)
 
@@ -79,7 +79,7 @@ func (s *ChocolateStorage) Delete(id string) error {
 func (s *ChocolateStorage) Update(c model.Chocolate) error {
 	_, exists := s.chocolates[c.ID]
 	if !exists {
-		return fmt.Errorf("Chocolate with id %s does not exist", c.ID)
+		return fmt.Errorf("chocolate with id %s does not exist", c.ID)
 	}
 	s.chocolates[c.ID] = &c
 
