@@ -27,6 +27,8 @@ type nestedItemSource struct {
 	createParentID string
 	deletedID      string
 	deleteParentID string
+	readID         string
+	readParentID   string
 }
 
 func (s *nestedItemSource) NestConfig() NestConfig {
@@ -45,6 +47,8 @@ func (s *nestedItemSource) FindAll(req Request) (Responder, error) {
 }
 
 func (s *nestedItemSource) FindOne(id string, req Request) (Responder, error) {
+	s.readID = id
+	s.readParentID = nestedParentID(req, "parentsID")
 	return &Response{Res: nestedItem{ID: id}}, nil
 }
 
@@ -93,6 +97,18 @@ var _ = Describe("NestedResource routing", func() {
 		Expect(rec.Code).To(Equal(http.StatusNoContent))
 		Expect(source.deletedID).To(Equal("child-1"))
 		Expect(source.deleteParentID).To(Equal("my-parent"))
+	})
+
+	It("reads through the nested route with the child id and parent id", func() {
+		rec := httptest.NewRecorder()
+		req, err := http.NewRequest("GET", "/v1/parents/my-parent/nestedItems/child-1", nil)
+		Expect(err).To(BeNil())
+		api.Handler().ServeHTTP(rec, req)
+
+		Expect(rec.Code).To(Equal(http.StatusOK))
+		Expect(source.readID).To(Equal("child-1"))
+		Expect(source.readParentID).To(Equal("my-parent"))
+		Expect(rec.Body.String()).To(ContainSubstring(`"id":"child-1"`))
 	})
 
 	It("keeps the flat routes working without a parent id", func() {

@@ -561,6 +561,32 @@ func (api *API) addResource(prototype jsonapi.MarshalIdentifier, source interfac
 				}
 			})
 		}
+
+		// A composite (to-many) nested resource also exposes its item by GET at
+		// the child path. A to-one nested resource addresses its item by the
+		// parent id and already answers GET on the parent's relation route, so
+		// registering here would collide with it - hence the child-segment guard.
+		if _, ok := source.(ResourceGetter); ok && cfg.ChildParam != "" {
+			api.router.Handle("GET", nestedItem, func(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, contextParams map[string]interface{}) {
+				info := requestInfo(r, api)
+				c, span := NewSpan(c, "GET "+nestedItem)
+				defer span.End()
+				r = r.WithContext(c)
+
+				for key, val := range contextParams {
+					WithAttribute(span, key, val)
+					c = contextWithValue(c, key, val)
+				}
+
+				setQueryParam(r, parentIDKey, params["id"])
+				api.middlewareChain(c, w, r)
+				err := res.handleRead(c, w, r, nestedItemParams(params, cfg.ChildParam), *info)
+				api.contextPool.Put(c)
+				if err != nil {
+					handleError(err, w, r, api.ContentType)
+				}
+			})
+		}
 	}
 
 	api.resources = append(api.resources, res)
