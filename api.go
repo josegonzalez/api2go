@@ -887,10 +887,8 @@ func (res *resource) handleCreate(c context.Context, w http.ResponseWriter, r *h
 		return fmt.Errorf("expected one newly created object by resource %s", res.name)
 	}
 
-	if len(prefix) > 0 {
-		w.Header().Set("Location", "/"+prefix+"/"+res.name+"/"+result.GetID())
-	} else {
-		w.Header().Set("Location", "/"+res.name+"/"+result.GetID())
+	if location, ok := createLocation(res.source, prefix, res.name, result.GetID()); ok {
+		w.Header().Set("Location", location)
 	}
 
 	// handle 200 status codes
@@ -906,6 +904,27 @@ func (res *resource) handleCreate(c context.Context, w http.ResponseWriter, r *h
 	default:
 		return fmt.Errorf("invalid status code %d from resource %s for method Create", response.StatusCode(), res.name)
 	}
+}
+
+// createLocation reports the item URL a create should advertise, and whether
+// there is one to advertise at all. api2go registers GET /collection/:id only
+// for a source implementing ResourceGetter, so a source without one has no item
+// route for a Location to name and would otherwise hand the client a URL that
+// 404s. A source may also decline the header outright through LocationSuppressor.
+func createLocation(source interface{}, prefix, name, id string) (string, bool) {
+	if _, ok := source.(ResourceGetter); !ok {
+		return "", false
+	}
+
+	if suppressor, ok := source.(LocationSuppressor); ok && suppressor.SuppressLocationHeader() {
+		return "", false
+	}
+
+	if len(prefix) > 0 {
+		return "/" + prefix + "/" + name + "/" + id, true
+	}
+
+	return "/" + name + "/" + id, true
 }
 
 func (res *resource) handleUpdate(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, info information) error {

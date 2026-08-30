@@ -91,6 +91,15 @@ type ObjectInitializer interface {
 	InitializeObject(interface{})
 }
 
+// The LocationSuppressor interface MAY be implemented to keep a create from
+// answering with a Location header. api2go otherwise writes one for every
+// resource that registers an item route; a resource whose item route exists but
+// is not meant to be followed - because it always refuses the read, or because
+// its id is a secret that does not belong in a response header - opts out here.
+type LocationSuppressor interface {
+	SuppressLocationHeader() bool
+}
+
 // The NestedResource interface MAY be implemented to additionally expose a
 // resource's create/update/delete routes nested under a parent collection -
 // for example POST /apps/:id/envs alongside the flat POST /envs. The nested
