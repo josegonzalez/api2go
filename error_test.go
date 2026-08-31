@@ -37,14 +37,14 @@ var _ = Describe("Errors test", func() {
 		It("will be marshalled correctly with default error", func() {
 			httpErr := NewHTTPError(nil, "Invalid use case done", http.StatusInternalServerError)
 			result := marshalHTTPError(httpErr)
-			expected := `{"errors":[{"status":"500","title":"Invalid use case done"}]}`
+			expected := `{"errors":[{"status":"500","title":"Internal Server Error","detail":"Invalid use case done"}]}`
 			Expect(result).To(Equal(expected))
 		})
 
 		It("will be marshalled correctly without child errors", func() {
 			httpErr := NewHTTPError(errors.New("Bad Request"), "Bad Request", 400)
 			result := marshalHTTPError(httpErr)
-			expected := `{"errors":[{"status":"400","title":"Bad Request"}]}`
+			expected := `{"errors":[{"status":"400","title":"Bad Request","detail":"Bad Request"}]}`
 			Expect(result).To(Equal(expected))
 		})
 

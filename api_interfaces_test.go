@@ -193,8 +193,9 @@ var _ = Describe("Test return code behavior", func() {
 			var err HTTPError
 			_ = json.Unmarshal(rec.Body.Bytes(), &err)
 			Expect(err.Errors[0]).To(Equal(Error{
-				Title:  "invalid status code 418 from resource someDatas for method Create",
-				Status: strconv.Itoa(http.StatusInternalServerError)}))
+				Status: strconv.Itoa(http.StatusInternalServerError),
+				Title:  http.StatusText(http.StatusInternalServerError),
+				Detail: "invalid status code 418 from resource someDatas for method Create"}))
 		})
 
 		It("handles forbidden 403 error", func() {
@@ -202,7 +203,10 @@ var _ = Describe("Test return code behavior", func() {
 			Expect(rec.Code).To(Equal(http.StatusForbidden))
 			var err HTTPError
 			_ = json.Unmarshal(rec.Body.Bytes(), &err)
-			Expect(err.Errors[0]).To(Equal(Error{Title: "Forbidden", Status: strconv.Itoa(http.StatusForbidden)}))
+			Expect(err.Errors[0]).To(Equal(Error{
+				Status: strconv.Itoa(http.StatusForbidden),
+				Title:  http.StatusText(http.StatusForbidden),
+				Detail: "Forbidden"}))
 		})
 
 		It("handles 409 conflict error", func() {
@@ -210,7 +214,10 @@ var _ = Describe("Test return code behavior", func() {
 			Expect(rec.Code).To(Equal(http.StatusConflict))
 			var err HTTPError
 			_ = json.Unmarshal(rec.Body.Bytes(), &err)
-			Expect(err.Errors[0]).To(Equal(Error{Title: "Conflict", Status: strconv.Itoa(http.StatusConflict)}))
+			Expect(err.Errors[0]).To(Equal(Error{
+				Status: strconv.Itoa(http.StatusConflict),
+				Title:  http.StatusText(http.StatusConflict),
+				Detail: "Conflict"}))
 		})
 	})
 
@@ -250,8 +257,9 @@ var _ = Describe("Test return code behavior", func() {
 			var err HTTPError
 			_ = json.Unmarshal(rec.Body.Bytes(), &err)
 			Expect(err.Errors[0]).To(Equal(Error{
-				Title:  "invalid status code 418 from resource someDatas for method Update",
-				Status: strconv.Itoa(http.StatusInternalServerError)}))
+				Status: strconv.Itoa(http.StatusInternalServerError),
+				Title:  http.StatusText(http.StatusInternalServerError),
+				Detail: "invalid status code 418 from resource someDatas for method Update"}))
 		})
 
 		// We do not check everything again like in Create, because it's always the same handleError
@@ -261,7 +269,10 @@ var _ = Describe("Test return code behavior", func() {
 			Expect(rec.Code).To(Equal(http.StatusForbidden), "we do not allow failes here!")
 			var err HTTPError
 			_ = json.Unmarshal(rec.Body.Bytes(), &err)
-			Expect(err.Errors[0]).To(Equal(Error{Title: "Fail", Status: strconv.Itoa(http.StatusForbidden)}))
+			Expect(err.Errors[0]).To(Equal(Error{
+				Status: strconv.Itoa(http.StatusForbidden),
+				Title:  http.StatusText(http.StatusForbidden),
+				Detail: "Fail"}))
 		})
 
 	})
