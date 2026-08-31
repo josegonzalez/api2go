@@ -721,7 +721,7 @@ var _ = Describe("RestHandler", func() {
 			Expect(err).To(BeNil())
 			api.Handler().ServeHTTP(rec, req)
 			Expect(rec.Code).To(Equal(http.StatusNotFound))
-			errorJSON := []byte(`{"errors":[{"status":"404","title":"post not found"}]}`)
+			errorJSON := []byte(`{"errors":[{"status":"404","title":"Not Found","detail":"post not found"}]}`)
 			Expect(rec.Body.Bytes()).To(MatchJSON(errorJSON))
 		})
 
@@ -856,7 +856,7 @@ var _ = Describe("RestHandler", func() {
 			Expect(err).To(BeNil())
 			api.Handler().ServeHTTP(rec, req)
 			Expect(rec.Code).To(Equal(http.StatusNotAcceptable))
-			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"406","title":"invalid record, no type was specified"}]}`))
+			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"406","title":"Not Acceptable","detail":"invalid record, no type was specified"}]}`))
 		})
 
 		It("patch must contain type and id but does not have id", func() {
@@ -866,7 +866,7 @@ var _ = Describe("RestHandler", func() {
 			api.Handler().ServeHTTP(rec, req)
 			// It's up to the user how to implement this. Api2go just checks if the type is correct
 			Expect(rec.Code).To(Equal(http.StatusConflict))
-			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"409","title":"id in the resource does not match servers endpoint"}]}`))
+			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"409","title":"Conflict","detail":"id in the resource does not match servers endpoint"}]}`))
 		})
 
 		It("POST without type returns 406", func() {
@@ -875,7 +875,7 @@ var _ = Describe("RestHandler", func() {
 			Expect(err).To(BeNil())
 			api.Handler().ServeHTTP(rec, req)
 			Expect(rec.Code).To(Equal(http.StatusNotAcceptable))
-			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"406","title":"invalid record, no type was specified"}]}`))
+			Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"406","title":"Not Acceptable","detail":"invalid record, no type was specified"}]}`))
 
 		})
 
@@ -904,7 +904,7 @@ var _ = Describe("RestHandler", func() {
 				Expect(err).To(BeNil())
 				api.Handler().ServeHTTP(rec, req)
 				Expect(rec.Code).To(Equal(http.StatusConflict))
-				Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"409","title":"id in the resource does not match servers endpoint"}]}`))
+				Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"409","title":"Conflict","detail":"id in the resource does not match servers endpoint"}]}`))
 			})
 
 			It("UPDATEs correctly using null.* values", func() {
@@ -1410,7 +1410,7 @@ var _ = Describe("RestHandler", func() {
 				api.Handler().ServeHTTP(rec, req)
 				Expect(rec.Header().Get("Content-Type")).To(Equal(defaultContentTypHeader))
 				Expect(rec.Code).To(Equal(http.StatusMethodNotAllowed))
-				expected := `{"errors":[{"status":"405","title":"Method Not Allowed"}]}`
+				expected := `{"errors":[{"status":"405","title":"Method Not Allowed","detail":"Method Not Allowed"}]}`
 				Expect(rec.Body.String()).To(MatchJSON(expected))
 			})
 		})
@@ -1708,10 +1708,10 @@ var _ = Describe("RestHandler", func() {
 
 			expectedError := func(field, objType string) Error {
 				return Error{
-					Status: "Bad Request",
+					Status: strconv.Itoa(http.StatusBadRequest),
 					Code:   codeInvalidQueryFields,
-					Title:  fmt.Sprintf(`Field "%s" does not exist for type "%s"`, field, objType),
-					Detail: "Please make sure you do only request existing fields",
+					Title:  http.StatusText(http.StatusBadRequest),
+					Detail: fmt.Sprintf(`Field "%s" does not exist for type "%s". Please make sure you do only request existing fields`, field, objType),
 					Source: &ErrorSource{
 						Parameter: fmt.Sprintf("fields[%s]", objType),
 					},

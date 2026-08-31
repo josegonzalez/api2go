@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 )
 
@@ -50,10 +51,19 @@ type ErrorSource struct {
 	Parameter string `json:"parameter,omitempty"`
 }
 
-// marshalHTTPError marshals an internal httpError
+// marshalHTTPError marshals an internal httpError. The message describes this
+// particular failure, so it goes in detail; title carries the status code's
+// reason phrase, which is the "summary that SHOULD NOT change from occurrence
+// to occurrence of the problem" the specification asks for. A status with no
+// registered phrase yields an empty title, which omitempty drops - an error
+// object need only carry one member.
 func marshalHTTPError(input HTTPError) string {
 	if len(input.Errors) == 0 {
-		input.Errors = []Error{{Title: input.msg, Status: strconv.Itoa(input.status)}}
+		input.Errors = []Error{{
+			Status: strconv.Itoa(input.status),
+			Title:  http.StatusText(input.status),
+			Detail: input.msg,
+		}}
 	}
 
 	data, err := json.Marshal(input)

@@ -1349,10 +1349,10 @@ func filterSparseFields(resp interface{}, r *http.Request) (interface{}, error) 
 			for k, v := range wrongFields {
 				for _, field := range v {
 					httpError.Errors = append(httpError.Errors, Error{
-						Status: "Bad Request",
+						Status: strconv.Itoa(http.StatusBadRequest),
 						Code:   codeInvalidQueryFields,
-						Title:  fmt.Sprintf(`Field "%s" does not exist for type "%s"`, field, k),
-						Detail: "Please make sure you do only request existing fields",
+						Title:  http.StatusText(http.StatusBadRequest),
+						Detail: fmt.Sprintf(`Field "%s" does not exist for type "%s". Please make sure you do only request existing fields`, field, k),
 						Source: &ErrorSource{
 							Parameter: fmt.Sprintf("fields[%s]", k),
 						},

@@ -155,7 +155,7 @@ var _ = Describe("api2go with gingonic router adapter", func() {
 		})
 
 		It("won't find her anymore", func() {
-			expected := `{"errors":[{"status":"404","title":"http error (404) User for id 1 not found and 0 more errors, User for id 1 not found"}]}`
+			expected := `{"errors":[{"status":"404","title":"Not Found","detail":"http error (404) User for id 1 not found and 0 more errors, User for id 1 not found"}]}`
 			req, err := http.NewRequest("GET", "/api/users/1", nil)
 			Expect(err).To(BeNil())
 			gg.ServeHTTP(rec, req)
