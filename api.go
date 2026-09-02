@@ -1019,6 +1019,12 @@ func (res *resource) handleReplaceRelation(c context.Context, w http.ResponseWri
 		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
+	if refuser, ok := res.source.(RelationEditRefuser); ok {
+		if err := refuser.RefuseRelationEdit(relation.Name, r.Method); err != nil {
+			return err
+		}
+	}
+
 	var (
 		err     error
 		editObj interface{}
@@ -1077,6 +1083,12 @@ func (res *resource) handleAddToManyRelation(c context.Context, w http.ResponseW
 
 	if !ok {
 		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
+	}
+
+	if refuser, ok := res.source.(RelationEditRefuser); ok {
+		if err := refuser.RefuseRelationEdit(relation.Name, r.Method); err != nil {
+			return err
+		}
 	}
 
 	var (
@@ -1158,6 +1170,12 @@ func (res *resource) handleDeleteToManyRelation(c context.Context, w http.Respon
 
 	if !ok {
 		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
+	}
+
+	if refuser, ok := res.source.(RelationEditRefuser); ok {
+		if err := refuser.RefuseRelationEdit(relation.Name, r.Method); err != nil {
+			return err
+		}
 	}
 
 	var (

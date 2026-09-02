@@ -54,9 +54,16 @@ func (q *queueingItem) SetToManyReferenceIDs(name string, IDs []string) error {
 
 // queueingItemSource answers every Update with updateCode, standing in for a
 // resource that queues background work off the back of a relationship edit and
-// reports it through the Responder.
+// reports it through the Responder. refuse, when set, is returned from
+// RefuseRelationEdit to stand in for a relation the resource cannot edit.
 type queueingItemSource struct {
 	updateCode int
+	refuse     error
+	updated    bool
+}
+
+func (s *queueingItemSource) RefuseRelationEdit(relation string, method string) error {
+	return s.refuse
 }
 
 func (s *queueingItemSource) FindOne(id string, req Request) (Responder, error) {
@@ -64,6 +71,7 @@ func (s *queueingItemSource) FindOne(id string, req Request) (Responder, error) 
 }
 
 func (s *queueingItemSource) Update(obj interface{}, req Request) (Responder, error) {
+	s.updated = true
 	return &Response{Res: obj, Code: s.updateCode}, nil
 }
 
@@ -106,5 +114,30 @@ var _ = Describe("Relationship edit status", func() {
 		Expect(edit("POST")).To(Equal(http.StatusAccepted))
 		Expect(edit("DELETE")).To(Equal(http.StatusAccepted))
 		Expect(edit("PATCH")).To(Equal(http.StatusAccepted))
+	})
+
+	// A resource routes every relationship edit through the same Update, so one
+	// that applies the change for only some relations would otherwise answer 204
+	// for the rest while discarding them.
+	It("refuses an edit the resource declines, without calling Update", func() {
+		source.refuse = NewHTTPError(nil, "cannot edit things this way", http.StatusForbidden)
+
+		for _, method := range []string{"POST", "DELETE", "PATCH"} {
+			source.updated = false
+			Expect(edit(method)).To(Equal(http.StatusForbidden))
+			Expect(source.updated).To(BeFalse(), "Update ran for a refused "+method)
+		}
+	})
+
+	It("carries the resource's refusal message to the client", func() {
+		source.refuse = NewHTTPError(nil, "cannot edit things this way", http.StatusForbidden)
+
+		rec := httptest.NewRecorder()
+		req, err := http.NewRequest("POST", "/v1/queueingItems/my-item/relationships/things",
+			strings.NewReader(`{"data": [{"type": "things", "id": "1"}]}`))
+		Expect(err).To(BeNil())
+		api.Handler().ServeHTTP(rec, req)
+
+		Expect(rec.Body.String()).To(MatchJSON(`{"errors":[{"status":"403","title":"Forbidden","detail":"cannot edit things this way"}]}`))
 	})
 })

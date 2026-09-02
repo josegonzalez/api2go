@@ -100,6 +100,22 @@ type LocationSuppressor interface {
 	SuppressLocationHeader() bool
 }
 
+// The RelationEditRefuser interface MAY be implemented to refuse an edit to one
+// of a resource's relationship links. api2go registers PATCH, POST, and DELETE
+// on every relationship it advertises a self link for, and routes them all
+// through Update; a resource that applies the change for only some relations -
+// or none - would otherwise report success for an edit it discarded. JSON:API
+// names 403 Forbidden as the answer for a relationship the server will not let
+// a client edit this way, and refusing is what this interface is for.
+//
+// Returning nil allows the request to proceed as usual. A resource that does
+// not implement this keeps accepting every edit, as before.
+type RelationEditRefuser interface {
+	// RefuseRelationEdit reports why an edit to the named relationship cannot be
+	// applied, as an error carrying the status to answer with, or nil to allow it.
+	RefuseRelationEdit(relation string, method string) error
+}
+
 // The NestedResource interface MAY be implemented to additionally expose a
 // resource's create/update/delete routes nested under a parent collection -
 // for example POST /apps/:id/envs alongside the flat POST /envs. The nested
