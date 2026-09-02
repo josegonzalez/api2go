@@ -999,6 +999,19 @@ func (res *resource) handleUpdate(c context.Context, w http.ResponseWriter, r *h
 	}
 }
 
+// relationStatus reports the status a relationship edit answers with. It is 204
+// because the edit has no body to return, but a resource that queued background
+// work needs to say so, and the Responder it returns is the only place it can:
+// unlike handleUpdate, these handlers write the status themselves. Any status
+// other than 202 keeps the 204 they have always written.
+func relationStatus(response Responder) int {
+	if response != nil && response.StatusCode() == http.StatusAccepted {
+		return http.StatusAccepted
+	}
+
+	return http.StatusNoContent
+}
+
 func (res *resource) handleReplaceRelation(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, relation jsonapi.Reference) error {
 	source, ok := res.source.(ResourceUpdater)
 
@@ -1045,13 +1058,17 @@ func (res *resource) handleReplaceRelation(c context.Context, w http.ResponseWri
 		return err
 	}
 
+	var updated Responder
 	if resType == reflect.Struct {
-		_, err = source.Update(reflect.ValueOf(editObj).Elem().Interface(), buildRequest(c, r))
+		updated, err = source.Update(reflect.ValueOf(editObj).Elem().Interface(), buildRequest(c, r))
 	} else {
-		_, err = source.Update(editObj, buildRequest(c, r))
+		updated, err = source.Update(editObj, buildRequest(c, r))
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if err == nil {
+		w.WriteHeader(relationStatus(updated))
+	}
+
 	return err
 }
 
@@ -1122,14 +1139,15 @@ func (res *resource) handleAddToManyRelation(c context.Context, w http.ResponseW
 	}
 	_ = targetObj.AddToManyIDs(relation.Name, newIDs)
 
+	var updated Responder
 	if resType == reflect.Struct {
-		_, err = source.Update(reflect.ValueOf(targetObj).Elem().Interface(), buildRequest(c, r))
+		updated, err = source.Update(reflect.ValueOf(targetObj).Elem().Interface(), buildRequest(c, r))
 	} else {
-		_, err = source.Update(targetObj, buildRequest(c, r))
+		updated, err = source.Update(targetObj, buildRequest(c, r))
 	}
 
 	if err == nil {
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(relationStatus(updated))
 	}
 
 	return err
@@ -1203,13 +1221,16 @@ func (res *resource) handleDeleteToManyRelation(c context.Context, w http.Respon
 	}
 	_ = targetObj.DeleteToManyIDs(relation.Name, obsoleteIDs)
 
+	var updated Responder
 	if resType == reflect.Struct {
-		_, err = source.Update(reflect.ValueOf(targetObj).Elem().Interface(), buildRequest(c, r))
+		updated, err = source.Update(reflect.ValueOf(targetObj).Elem().Interface(), buildRequest(c, r))
 	} else {
-		_, err = source.Update(targetObj, buildRequest(c, r))
+		updated, err = source.Update(targetObj, buildRequest(c, r))
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if err == nil {
+		w.WriteHeader(relationStatus(updated))
+	}
 
 	return err
 }
