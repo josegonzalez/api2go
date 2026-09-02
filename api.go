@@ -1013,16 +1013,16 @@ func relationStatus(response Responder) int {
 }
 
 func (res *resource) handleReplaceRelation(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, relation jsonapi.Reference) error {
-	source, ok := res.source.(ResourceUpdater)
-
-	if !ok {
-		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
-	}
-
 	if refuser, ok := res.source.(RelationEditRefuser); ok {
 		if err := refuser.RefuseRelationEdit(relation.Name, r.Method); err != nil {
 			return err
 		}
+	}
+
+	source, ok := res.source.(ResourceUpdater)
+
+	if !ok {
+		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
 	var (
@@ -1079,16 +1079,16 @@ func (res *resource) handleReplaceRelation(c context.Context, w http.ResponseWri
 }
 
 func (res *resource) handleAddToManyRelation(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, relation jsonapi.Reference) error {
-	source, ok := res.source.(ResourceUpdater)
-
-	if !ok {
-		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
-	}
-
 	if refuser, ok := res.source.(RelationEditRefuser); ok {
 		if err := refuser.RefuseRelationEdit(relation.Name, r.Method); err != nil {
 			return err
 		}
+	}
+
+	source, ok := res.source.(ResourceUpdater)
+
+	if !ok {
+		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
 	var (
@@ -1166,16 +1166,16 @@ func (res *resource) handleAddToManyRelation(c context.Context, w http.ResponseW
 }
 
 func (res *resource) handleDeleteToManyRelation(c context.Context, w http.ResponseWriter, r *http.Request, params map[string]string, relation jsonapi.Reference) error {
-	source, ok := res.source.(ResourceUpdater)
-
-	if !ok {
-		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
-	}
-
 	if refuser, ok := res.source.(RelationEditRefuser); ok {
 		if err := refuser.RefuseRelationEdit(relation.Name, r.Method); err != nil {
 			return err
 		}
+	}
+
+	source, ok := res.source.(ResourceUpdater)
+
+	if !ok {
+		return fmt.Errorf("resource %s does not implement the ResourceUpdater interface", res.name)
 	}
 
 	var (

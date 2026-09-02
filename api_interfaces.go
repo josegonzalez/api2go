@@ -109,7 +109,9 @@ type LocationSuppressor interface {
 // a client edit this way, and refusing is what this interface is for.
 //
 // Returning nil allows the request to proceed as usual. A resource that does
-// not implement this keeps accepting every edit, as before.
+// not implement this keeps accepting every edit, as before. It is consulted
+// before the ResourceUpdater assertion, so a resource with no Update at all can
+// refuse the edit rather than failing on the missing interface.
 type RelationEditRefuser interface {
 	// RefuseRelationEdit reports why an edit to the named relationship cannot be
 	// applied, as an error carrying the status to answer with, or nil to allow it.
